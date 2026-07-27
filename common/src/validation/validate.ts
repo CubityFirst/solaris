@@ -12,6 +12,16 @@ export const ok = <T>(value: T): Validator<T> => {
     return (_) => value;
 }
 
+export const withMessage = <T>(validator: Validator<T>, message: string): Validator<T> => {
+    return v => {
+        try {
+            return validator(v);
+        } catch (e) {
+            throw new ValidationError(message, undefined, true);
+        }
+    }
+}
+
 const primitive = (t: string) => (value: any) => {
     if (value === null || value === undefined || typeof value !== t) {
         throw failed(t, value);
@@ -179,6 +189,11 @@ export const object = <T>(objValidator: ObjectValidator<T>): Validator<T> => {
                 n[key] = validator(v[key]);
             } catch (e) {
                 const err = e as ValidationError;
+
+                if (err.hasCustomMessage) {
+                    throw err;
+                }
+
                 throw new ValidationError(`Error in field ${key}: ${err.message}`);
             }
         }
